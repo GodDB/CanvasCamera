@@ -46,9 +46,8 @@ class MainActivity : ComponentActivity() {
                 val translateX = remember { mutableStateOf(0f) }
                 val translateY = remember { mutableStateOf(0f) }
                 val translateZ = remember { mutableStateOf(0f) }
+                val scale = remember { mutableStateOf(1f) }
                 val density = LocalDensity.current
-                val screenWidth = with(density) { LocalConfiguration.current.screenWidthDp.dp.toPx() }
-                val screenHeight = with(density) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
 
                 val image = ImageBitmap.imageResource(R.drawable.bee_bg_apeach)
                 val camera = Camera()
@@ -87,6 +86,11 @@ class MainActivity : ComponentActivity() {
                         )
 
                         Text(
+                            modifier = Modifier.clickable { scale.value = scale.value * 1.1f },
+                            text = "scale 1.1배 상승"
+                        )
+
+                        Text(
                             modifier = Modifier.clickable {
                                 rotateX.value = 0f
                                 rotateY.value = 0f
@@ -94,6 +98,7 @@ class MainActivity : ComponentActivity() {
                                 translateX.value = 0f
                                 translateY.value = 0f
                                 translateZ.value = 0f
+                                scale.value = 1f
                             },
                             text = "클리어"
                         )
@@ -109,6 +114,8 @@ class MainActivity : ComponentActivity() {
                                 rotationZ = rotateZ.value
                                 translationX = translateX.value
                                 translationY = translateY.value
+                                scaleX = scale.value
+                                scaleY = scale.value
                             },
                         painter = painterResource(id = R.drawable.bee_bg_apeach),
                         contentDescription = ""
@@ -120,6 +127,7 @@ class MainActivity : ComponentActivity() {
                             .padding(top = 100.dp, start = 100.dp)
                     ) {
                         camera.withSave {
+                            matrix.preScale(scale.value, scale.value, image.width / 2f, image.height / 2f)
                             camera.translate(
                                 matrix = matrix,
                                 translateX = translateX.value,
@@ -134,6 +142,7 @@ class MainActivity : ComponentActivity() {
                                 rotateY = rotateY.value,
                                 rotateZ = rotateZ.value
                             )
+                            matrix.postScale(scale.value, scale.value, image.width / 2f, image.height / 2f)
                         }
 
                         drawContext.canvas.nativeCanvas.withMatrix(matrix = matrix) {
