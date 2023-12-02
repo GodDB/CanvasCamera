@@ -3,23 +3,27 @@ package com.example.myapplication
 import android.graphics.Camera
 import android.graphics.Matrix
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
@@ -45,7 +49,6 @@ class MainActivity : ComponentActivity() {
                 val rotateZ = remember { mutableStateOf(0f) }
                 val translateX = remember { mutableStateOf(0f) }
                 val translateY = remember { mutableStateOf(0f) }
-                val translateZ = remember { mutableStateOf(0f) }
                 val scale = remember { mutableStateOf(1f) }
                 val density = LocalDensity.current
 
@@ -53,8 +56,10 @@ class MainActivity : ComponentActivity() {
                 val camera = Camera()
                 val dp_10 = with(density) { 10.dp.toPx() }
                 // A surface container using the 'background' color from the theme
-                Column(modifier = Modifier.fillMaxSize()) {
-                    FlowRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    FlowRow(modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(
                             modifier = Modifier.clickable { rotateX.value = rotateX.value + 10f },
                             text = "x축 10도 회전"
@@ -81,13 +86,8 @@ class MainActivity : ComponentActivity() {
                         )
 
                         Text(
-                            modifier = Modifier.clickable { translateZ.value = translateZ.value + dp_10 },
-                            text = "z축 10dp 이동 "
-                        )
-
-                        Text(
-                            modifier = Modifier.clickable { scale.value = scale.value * 1.1f },
-                            text = "scale 1.1배 상승"
+                            modifier = Modifier.clickable { scale.value = scale.value / 1.1f },
+                            text = "scale 1.1배 감소"
                         )
 
                         Text(
@@ -97,54 +97,36 @@ class MainActivity : ComponentActivity() {
                                 rotateZ.value = 0f
                                 translateX.value = 0f
                                 translateY.value = 0f
-                                translateZ.value = 0f
                                 scale.value = 1f
                             },
                             text = "클리어"
                         )
                     }
 
-
                     Image(
-                        modifier = Modifier
-                            .padding(top = 100.dp, start = 100.dp)
-                            .graphicsLayer {
-                                rotationX = rotateX.value
-                                rotationY = rotateY.value
-                                rotationZ = rotateZ.value
-                                translationX = translateX.value
-                                translationY = translateY.value
-                                scaleX = scale.value
-                                scaleY = scale.value
-                            },
+                        modifier = Modifier.graphicsLayer {
+                            rotationX = rotateX.value
+                            rotationY = rotateY.value
+                            rotationZ = rotateZ.value
+                            translationX = translateX.value
+                            translationY = translateY.value
+                            scaleX = scale.value
+                            scaleY = scale.value
+                        },
                         painter = painterResource(id = R.drawable.bee_bg_apeach),
                         contentDescription = ""
                     )
 
-                    Canvas(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = 100.dp, start = 100.dp)
-                    ) {
-                        camera.withSave {
-                            matrix.preScale(scale.value, scale.value, image.width / 2f, image.height / 2f)
-                            camera.translate(
-                                matrix = matrix,
-                                translateX = translateX.value,
-                                translateY = translateY.value,
-                                translateZ = translateZ.value
-                            )
-                            camera.rotateOfPoint(
-                                matrix = matrix,
-                                targetX = image.width / 2f,
-                                targetY = image.height / 2f,
-                                rotateX = rotateX.value,
-                                rotateY = rotateY.value,
-                                rotateZ = rotateZ.value
-                            )
-                            matrix.postScale(scale.value, scale.value, image.width / 2f, image.height / 2f)
-                        }
-
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        camera.save()
+                        camera.rotate(rotateX.value, rotateY.value, -rotateZ.value)
+                        camera.getMatrix(matrix)
+                        matrix.preScale(scale.value, scale.value)
+                        matrix.postTranslate(translateX.value, translateY.value)
+                        matrix.preTranslate(-image.width / 2f, -image.height / 2f)
+                        matrix.postTranslate(image.width / 2f, image.height / 2f)
+                        camera.restore()
+                        
                         drawContext.canvas.nativeCanvas.withMatrix(matrix = matrix) {
                             drawImage(image)
                         }
@@ -160,33 +142,6 @@ inline fun Camera.withSave(block: () -> Unit) {
     save()
     block()
     restore()
-}
-
-
-// modifier.graphicLayer의 동작과 맞춤
-fun Camera.rotateOfPoint(
-    matrix: Matrix,
-    targetX: Float = 0f,
-    targetY: Float = 0f,
-    rotateX: Float = 0f,
-    rotateY: Float = 0f,
-    rotateZ: Float = 0f
-) {
-    rotate(rotateX, rotateY, -rotateZ)
-    getMatrix(matrix)
-    matrix.preTranslate(-targetX, -targetY)
-    matrix.postTranslate(targetX, targetY)
-}
-
-// modifier.graphicLayer의 동작과 맞춤
-fun Camera.translate(
-    matrix: Matrix,
-    translateX: Float = 0f,
-    translateY: Float = 0f,
-    translateZ: Float = 0f
-) {
-    translate(translateX, -translateY, -translateZ)
-    getMatrix(matrix)
 }
 
 @Composable
