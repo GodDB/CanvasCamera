@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,10 +22,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.withMatrix
@@ -97,6 +100,20 @@ class MainActivity : ComponentActivity() {
                     }
 
 
+                    Image(
+                        modifier = Modifier
+                            .padding(top = 100.dp, start = 100.dp)
+                            .graphicsLayer {
+                                rotationX = rotateX.value
+                                rotationY = rotateY.value
+                                rotationZ = rotateZ.value
+                                translationX = translateX.value
+                                translationY = translateY.value
+                            },
+                        painter = painterResource(id = R.drawable.bee_bg_apeach),
+                        contentDescription = ""
+                    )
+
                     Canvas(
                         modifier = Modifier
                             .fillMaxSize()
@@ -136,6 +153,8 @@ inline fun Camera.withSave(block: () -> Unit) {
     restore()
 }
 
+
+// modifier.graphicLayer의 동작과 맞춤
 fun Camera.rotateOfPoint(
     matrix: Matrix,
     targetX: Float = 0f,
@@ -144,12 +163,13 @@ fun Camera.rotateOfPoint(
     rotateY: Float = 0f,
     rotateZ: Float = 0f
 ) {
-    rotate(rotateX, rotateY, rotateZ)
+    rotate(rotateX, rotateY, -rotateZ)
     getMatrix(matrix)
     matrix.preTranslate(-targetX, -targetY)
     matrix.postTranslate(targetX, targetY)
 }
 
+// modifier.graphicLayer의 동작과 맞춤
 fun Camera.translate(
     matrix: Matrix,
     translateX: Float = 0f,
